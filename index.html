@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b6e4f">
+  <meta name="description" content="IleZaDzis - szybkie rozliczenie kosztów kortu do badmintona">
+  <title>IleZaDzis</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <section class="card">
+      <h2>Kiedy gramy?</h2>
+      <div class="segmented" id="dayType" role="group" aria-label="Wybór ceny">
+        <button type="button" data-day="weekday" class="seg-btn" aria-pressed="false">
+          <span class="seg-label">W tygodniu</span>
+          <span class="seg-price">44,50 zł / 0,5h</span>
+        </button>
+        <button type="button" data-day="weekend" class="seg-btn" aria-pressed="false">
+          <span class="seg-label">Weekend</span>
+          <span class="seg-price">32,50 zł / 0,5h</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Jak długo gramy?</h2>
+      <div class="stepper">
+        <button type="button" class="step-btn" data-action="dec" data-target="time" aria-label="Zmniejsz czas">−</button>
+        <div class="value" id="timeValue">2h</div>
+        <button type="button" class="step-btn" data-action="inc" data-target="time" aria-label="Zwiększ czas">+</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Odbite multisporty</h2>
+      <div class="stepper">
+        <button type="button" class="step-btn" data-action="dec" data-target="multisport" aria-label="Zmniejsz multisporty">−</button>
+        <div class="value" id="multiValue">4</div>
+        <button type="button" class="step-btn" data-action="inc" data-target="multisport" aria-label="Zwiększ multisporty">+</button>
+      </div>
+      <p class="hint" id="multiHint"></p>
+    </section>
+
+    <section class="tiles" id="tiles"></section>
+
+    <section class="card summary" aria-live="polite">
+      <h2>Rozliczenie</h2>
+      <dl id="summary"></dl>
+    </section>
+  </main>
+
+  <div class="version" id="version"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
