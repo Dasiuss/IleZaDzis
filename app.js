@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var VERSION = 'v1';
+  var VERSION = 'v2';
   var PRICES = { weekday: 44.50, weekend: 32.50 };
   var MULTI_DISCOUNT = 15;
   var TIME_MIN = 1, TIME_MAX = 16;   // w jednostkach 0,5h: 0,5h .. 8h
@@ -32,10 +32,9 @@
     return r.toFixed(2).replace('.', ',') + ' zł';
   }
 
-  function formatSigned(v) {
+  function shortNum(v) {
     var r = round2(v);
-    var s = r.toFixed(2).replace('.', ',');
-    return (r > 0 ? '+' : '') + s + ' zł';
+    return String(r).replace('.', ',');
   }
 
   function formatHours(hh) {
@@ -162,15 +161,27 @@
     }
   }
 
+  function lotkiDetail(shuttles, total) {
+    var parts = shuttles.filter(function (v) { return v !== 0; });
+    if (parts.length === 0) return null;
+    if (parts.length === 1) return formatMoney(total);
+    return parts.map(shortNum).join(' zł + ') + ' zł = ' + formatMoney(total);
+  }
+
   function renderSummary() {
     var c = compute(state);
+    var price = PRICES[state.dayType];
+
     var rows = [
-      { label: 'Kort', value: formatMoney(c.courtGross), negative: false },
-      { label: 'Multisporty', value: formatMoney(-c.multiDiscount), negative: c.multiDiscount > 0 }
+      { label: 'Kort', value: formatMoney(price) + ' × ' + state.halfHours + ' = ' + formatMoney(c.courtGross), negative: false },
+      { label: 'Multisporty', value: '15 zł × ' + state.multisports + ' = ' + formatMoney(-c.multiDiscount), negative: c.multiDiscount > 0 }
     ];
-    if (c.shuttlesTotal !== 0) {
-      rows.push({ label: 'Lotki', value: formatSigned(c.shuttlesTotal), negative: c.shuttlesTotal < 0 });
+
+    var lotki = lotkiDetail(state.shuttles, c.shuttlesTotal);
+    if (lotki) {
+      rows.push({ label: 'Lotki', value: lotki, negative: c.shuttlesTotal < 0 });
     }
+
     rows.push({ label: 'Razem', value: formatMoney(c.total), negative: c.total < 0, total: true });
     rows.push({ label: 'Na osobę', value: formatMoney(c.share), negative: false, perPerson: true });
 
@@ -279,6 +290,15 @@
     renderTiles();
   }
 
+  function clearAll() {
+    state = defaultState();
+    try { localStorage.removeItem(LS_KEY); } catch (e) {}
+    var url = new URL(location.href);
+    url.search = '';
+    history.replaceState(null, '', url);
+    renderAll();
+  }
+
   // ---------- events ----------
   document.addEventListener('click', function (e) {
     var seg = e.target.closest('.seg-btn');
@@ -323,6 +343,8 @@
     renderSummary();
     renderAmounts();
   });
+
+  document.getElementById('clearBtn').addEventListener('click', clearAll);
 
   function stateChanged(rebuildTiles) {
     save();

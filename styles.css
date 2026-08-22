@@ -279,3 +279,19 @@ main {
   user-select: none;
   pointer-events: none;
 }
+
+.clear-btn {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--negative);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.clear-btn:active { background: #f8ece9; }

@@ -1,4 +1,4 @@
-var VERSION = 'v1';
+var VERSION = 'v2';
 var CACHE = 'ilezadzis-' + VERSION;
 var ASSETS = [
   './',
