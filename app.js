@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var VERSION = 'v3';
+  var VERSION = 'v4';
   var CALC = window.IleZaDzisCalculator;
   var PRICES = CALC.PRICES;
   var MULTI_DISCOUNT = CALC.MULTI_DISCOUNT;
@@ -77,9 +77,13 @@
     if (state.shuttles.some(function (x) { return String(x).trim() !== ''; })) {
       params.set('l', CALC.serializeShuttles(state.shuttles));
     }
-    var url = new URL(location.href);
-    url.search = params.toString();
-    history.replaceState(null, '', url);
+    try {
+      var url = new URL(location.href);
+      url.search = params.toString();
+      history.replaceState(null, '', url);
+    } catch (e) {
+      // Brak możliwości synchronizacji URL nie blokuje działania kalkulatora.
+    }
   }
 
   function readLocal() {
@@ -290,9 +294,13 @@
   function clearAll() {
     state = defaultState();
     try { localStorage.removeItem(LS_KEY); } catch (e) {}
-    var url = new URL(location.href);
-    url.search = '';
-    history.replaceState(null, '', url);
+    try {
+      var url = new URL(location.href);
+      url.search = '';
+      history.replaceState(null, '', url);
+    } catch (e) {
+      // Brak możliwości wyczyszczenia URL nie blokuje resetu interfejsu.
+    }
     renderAll();
   }
 

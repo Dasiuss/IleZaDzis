@@ -1,4 +1,4 @@
-var VERSION = 'v3';
+var VERSION = 'v4';
 var CACHE = 'ilezadzis-' + VERSION;
 var ASSETS = [
   './',
@@ -37,6 +37,7 @@ self.addEventListener('fetch', function (e) {
     caches.match(e.request).then(function (cached) {
       if (cached) return cached;
       return fetch(e.request).then(function (res) {
+        if (!res.ok) return res;
         var copy = res.clone();
         caches.open(CACHE).then(function (cache) { cache.put(e.request, copy); });
         return res;
