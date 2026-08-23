@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IleZaDzis - testy</title>
+  <style>
+    body { margin: 0; padding: 24px; font: 16px system-ui, sans-serif; background: #f4f6f5; color: #16211c; }
+    main { max-width: 760px; margin: auto; }
+    h1 { margin-top: 0; }
+    #status { padding: 12px; border-radius: 8px; background: #fff; }
+    #status.pass { color: #166534; background: #dcfce7; }
+    #status.fail { color: #991b1b; background: #fee2e2; }
+    ul { padding-left: 20px; }
+    li.pass { color: #166534; }
+    li.fail { color: #991b1b; }
+    iframe { width: 1px; height: 1px; position: absolute; opacity: 0; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Testy IleZaDzis</h1>
+    <div id="status">Uruchamianie...</div>
+    <ul id="results"></ul>
+    <iframe id="app-frame" title="Testowana aplikacja"></iframe>
+  </main>
+  <script src="../calculator.js"></script>
+  <script src="runner.js"></script>
+</body>
+</html>

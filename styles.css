@@ -226,10 +226,22 @@ main {
   background: #fff;
 }
 
+.tile-shuttle.invalid {
+  border-color: #e5a39b;
+  background: #fff5f3;
+}
+
+.tile-shuttle.invalid:focus {
+  outline-color: var(--negative);
+}
+
 .tile-shuttle::-webkit-outer-spin-button,
 .tile-shuttle::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-.tile-shuttle::placeholder { color: #a3b0aa; }
+.tile-shuttle::placeholder {
+  color: #a3b0aa;
+  font-size: 11px;
+}
 
 .tile-amount {
   font-size: 15px;

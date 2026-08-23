@@ -1,13 +1,15 @@
 (function () {
   'use strict';
 
-  var VERSION = 'v2';
-  var PRICES = { weekday: 44.50, weekend: 32.50 };
-  var MULTI_DISCOUNT = 15;
+  var VERSION = 'v3';
+  var CALC = window.IleZaDzisCalculator;
+  var PRICES = CALC.PRICES;
+  var MULTI_DISCOUNT = CALC.MULTI_DISCOUNT;
   var TIME_MIN = 1, TIME_MAX = 16;   // w jednostkach 0,5h: 0,5h .. 8h
   var MULTI_MIN = 0, MULTI_MAX = 8;
   var PLAYERS_MIN = 1, PLAYERS_MAX = 8;
   var LS_KEY = 'ilezadzis-state';
+  var SHUTTLE_PLACEHOLDERS = ['Lotki (zł)', 'np. 14', 'np. 3x12', 'np. 2*8'];
 
   function defaultState() {
     return {
@@ -15,16 +17,17 @@
       halfHours: 4,      // 2h
       multisports: 4,
       players: 4,
-      shuttles: [0, 0, 0, 0]
+      shuttles: ['', '', '', '']
     };
   }
 
+  var syncLocalStateToUrl = false;
   var state = load();
+  if (syncLocalStateToUrl) save();
 
   // ---------- helpers ----------
   function round2(x) {
-    var r = Math.round(x * 100) / 100;
-    return Object.is(r, -0) ? 0 : r;
+    return CALC.round2(x);
   }
 
   function formatMoney(v) {
@@ -49,31 +52,17 @@
     return Math.min(max, Math.max(min, n));
   }
 
-  function parseFloatNum(str) {
-    if (str == null) return NaN;
-    var n = parseFloat(String(str).trim().replace(',', '.'));
-    return isNaN(n) ? NaN : n;
+  function parseShuttleValue(value) {
+    return CALC.parseShuttleValue(value);
   }
 
   function normalizeShuttles(arr, n) {
-    var out = new Array(n);
-    for (var i = 0; i < n; i++) {
-      var v = Array.isArray(arr) ? parseFloatNum(arr[i]) : NaN;
-      out[i] = isNaN(v) ? 0 : v;
-    }
-    return out;
+    return CALC.normalizeShuttles(arr, n);
   }
 
   // ---------- compute ----------
   function compute(s) {
-    var courtGross = PRICES[s.dayType] * s.halfHours;
-    var multiDiscount = MULTI_DISCOUNT * s.multisports;
-    var courtNet = courtGross - multiDiscount;
-    var shuttlesTotal = s.shuttles.reduce(function (a, b) { return a + b; }, 0);
-    var total = courtNet + shuttlesTotal;
-    var share = s.players > 0 ? total / s.players : 0;
-    var perPlayer = s.shuttles.map(function (l) { return round2(share - l); });
-    return { courtGross: courtGross, multiDiscount: multiDiscount, courtNet: courtNet, shuttlesTotal: shuttlesTotal, total: total, share: share, perPlayer: perPlayer };
+    return CALC.compute(s);
   }
 
   // ---------- persistence ----------
@@ -85,8 +74,8 @@
     params.set('t', state.halfHours);
     params.set('m', state.multisports);
     params.set('p', state.players);
-    if (state.shuttles.some(function (x) { return x > 0; })) {
-      params.set('l', state.shuttles.join(','));
+    if (state.shuttles.some(function (x) { return String(x).trim() !== ''; })) {
+      params.set('l', CALC.serializeShuttles(state.shuttles));
     }
     var url = new URL(location.href);
     url.search = params.toString();
@@ -122,11 +111,17 @@
       s.players = clampInt(params.get('p'), PLAYERS_MIN, PLAYERS_MAX, s.players);
       var list = params.get('l');
       if (list != null) {
-        s.shuttles = normalizeShuttles(list.split(','), s.players);
+        s.shuttles = CALC.deserializeShuttles(list, s.players);
       }
+      s.shuttles = normalizeShuttles(s.shuttles, s.players);
       return s;
     }
-    return readLocal() || defaultState();
+    var localState = readLocal();
+    if (localState) {
+      syncLocalStateToUrl = true;
+      return localState;
+    }
+    return defaultState();
   }
 
   // ---------- rendering ----------
@@ -162,7 +157,7 @@
   }
 
   function lotkiDetail(shuttles, total) {
-    var parts = shuttles.filter(function (v) { return v !== 0; });
+    var parts = shuttles.map(parseShuttleValue).filter(function (v) { return v !== 0; });
     if (parts.length === 0) return null;
     if (parts.length === 1) return formatMoney(total);
     return parts.map(shortNum).join(' zł + ') + ' zł = ' + formatMoney(total);
@@ -228,10 +223,12 @@
       input.type = 'text';
       input.inputMode = 'decimal';
       input.className = 'tile-shuttle';
-      input.placeholder = 'Lotki (zł)';
+      input.placeholder = SHUTTLE_PLACEHOLDERS[i] || 'Lotki (zł)';
+      input.title = 'Wpisz kwotę albo liczbę lotek x cena, np. 3x12 lub 3*12';
       input.setAttribute('aria-label', 'Wartość lotek gracza ' + (i + 1));
       input.setAttribute('data-index', i);
-      input.value = state.shuttles[i] ? String(state.shuttles[i]).replace('.', ',') : '';
+      input.value = state.shuttles[i] || '';
+      input.classList.toggle('invalid', !CALC.isValidShuttleValue(input.value));
 
       var amount = document.createElement('div');
       amount.className = 'tile-amount';
@@ -337,8 +334,8 @@
     var input = e.target.closest('.tile-shuttle');
     if (!input) return;
     var i = parseInt(input.getAttribute('data-index'), 10);
-    var v = parseFloatNum(input.value);
-    state.shuttles[i] = isNaN(v) ? 0 : v;
+    state.shuttles[i] = input.value;
+    input.classList.toggle('invalid', !CALC.isValidShuttleValue(input.value));
     save();
     renderSummary();
     renderAmounts();

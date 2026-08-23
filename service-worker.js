@@ -1,8 +1,9 @@
-var VERSION = 'v2';
+var VERSION = 'v3';
 var CACHE = 'ilezadzis-' + VERSION;
 var ASSETS = [
   './',
   './index.html',
+  './calculator.js',
   './styles.css',
   './app.js',
   './manifest.webmanifest',
