@@ -213,7 +213,16 @@
           if (localStorage.getItem('ilezadzis-state').indexOf('3x12') === -1) {
             fail('wyrażenie lotek nie zostało zapisane w localStorage');
           }
+          equal(doc.querySelector('.tile-shuttle').inputMode, 'text', 'pełna klawiatura dla lotek');
 
+          doc.querySelector('.tile-name').click();
+          var nameInput = doc.querySelector('.tile-name-input');
+          nameInput.value = 'Ania';
+          nameInput.blur();
+          equal(doc.querySelector('.tile-name').textContent, 'Ania', 'zmiana nazwy gracza');
+          equal(new URL(frame.contentWindow.location.href).searchParams.get('n').indexOf('Ania') !== -1, true, 'nazwa gracza w URL');
+
+          shuttleInput = doc.querySelectorAll('.tile-shuttle')[2];
           shuttleInput.value = '3x';
           shuttleInput.dispatchEvent(new Event('input', { bubbles: true }));
           if (!shuttleInput.classList.contains('invalid')) fail('błędny wpis nie został oznaczony');

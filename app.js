@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var VERSION = 'v4';
+  var VERSION = 'v5';
   var CALC = window.IleZaDzisCalculator;
   var PRICES = CALC.PRICES;
   var MULTI_DISCOUNT = CALC.MULTI_DISCOUNT;
@@ -17,7 +17,8 @@
       halfHours: 4,      // 2h
       multisports: 4,
       players: 4,
-      shuttles: ['', '', '', '']
+      shuttles: ['', '', '', ''],
+      names: ['Gracz 1', 'Gracz 2', 'Gracz 3', 'Gracz 4']
     };
   }
 
@@ -60,6 +61,15 @@
     return CALC.normalizeShuttles(arr, n);
   }
 
+  function normalizeNames(arr, n) {
+    var out = new Array(n);
+    for (var i = 0; i < n; i++) {
+      var name = Array.isArray(arr) && arr[i] != null ? String(arr[i]).trim() : '';
+      out[i] = name || 'Gracz ' + (i + 1);
+    }
+    return out;
+  }
+
   // ---------- compute ----------
   function compute(s) {
     return CALC.compute(s);
@@ -77,6 +87,7 @@
     if (state.shuttles.some(function (x) { return String(x).trim() !== ''; })) {
       params.set('l', CALC.serializeShuttles(state.shuttles));
     }
+    params.set('n', JSON.stringify(state.names));
     try {
       var url = new URL(location.href);
       url.search = params.toString();
@@ -98,6 +109,7 @@
       out.multisports = clampInt(s.multisports, MULTI_MIN, MULTI_MAX, out.multisports);
       out.players = clampInt(s.players, PLAYERS_MIN, PLAYERS_MAX, out.players);
       out.shuttles = normalizeShuttles(s.shuttles, out.players);
+      out.names = normalizeNames(s.names, out.players);
       return out;
     } catch (e) {
       return null;
@@ -106,7 +118,7 @@
 
   function load() {
     var params = new URLSearchParams(location.search);
-    var fromUrl = params.has('d') || params.has('t') || params.has('m') || params.has('p') || params.has('l');
+    var fromUrl = params.has('d') || params.has('t') || params.has('m') || params.has('p') || params.has('l') || params.has('n');
     if (fromUrl) {
       var s = defaultState();
       s.dayType = params.get('d') === 'weekend' ? 'weekend' : 'weekday';
@@ -118,6 +130,11 @@
         s.shuttles = CALC.deserializeShuttles(list, s.players);
       }
       s.shuttles = normalizeShuttles(s.shuttles, s.players);
+      try {
+        s.names = normalizeNames(JSON.parse(params.get('n')), s.players);
+      } catch (e) {
+        s.names = normalizeNames([], s.players);
+      }
       return s;
     }
     var localState = readLocal();
@@ -217,7 +234,11 @@
 
       var name = document.createElement('span');
       name.className = 'tile-name';
-      name.textContent = 'Gracz ' + (i + 1);
+      name.textContent = state.names[i];
+      name.setAttribute('data-index', i);
+      name.setAttribute('tabindex', '0');
+      name.setAttribute('role', 'button');
+      name.setAttribute('aria-label', 'Zmień nazwę gracza ' + (i + 1));
 
       var icon = document.createElement('div');
       icon.className = 'tile-icon';
@@ -225,7 +246,7 @@
 
       var input = document.createElement('input');
       input.type = 'text';
-      input.inputMode = 'decimal';
+      input.inputMode = 'text';
       input.className = 'tile-shuttle';
       input.placeholder = SHUTTLE_PLACEHOLDERS[i] || 'Lotki (zł)';
       input.title = 'Wpisz kwotę albo liczbę lotek x cena, np. 3x12 lub 3*12';
@@ -268,6 +289,41 @@
     control.appendChild(addBtn);
     control.appendChild(delBtn);
     tiles.appendChild(control);
+  }
+
+  function startNameEdit(nameElement) {
+    var index = parseInt(nameElement.getAttribute('data-index'), 10);
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'tile-name-input';
+    input.value = state.names[index];
+    input.maxLength = 24;
+    input.setAttribute('aria-label', 'Nazwa gracza ' + (index + 1));
+    nameElement.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function finish(cancel) {
+      if (input.nameEditFinished) return;
+      input.nameEditFinished = true;
+      if (!cancel) {
+        state.names[index] = input.value.trim() || 'Gracz ' + (index + 1);
+        save();
+      }
+      renderTiles();
+    }
+
+    input.addEventListener('blur', function () { finish(false); });
+    input.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        input.blur();
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        finish(true);
+      }
+    });
   }
 
   function renderAmounts() {
@@ -313,6 +369,12 @@
       return;
     }
 
+    var name = e.target.closest('.tile-name');
+    if (name) {
+      startNameEdit(name);
+      return;
+    }
+
     var playerBtn = e.target.closest('[data-player]');
     if (playerBtn && !playerBtn.disabled) {
       var pDir = playerBtn.getAttribute('data-player') === 'inc' ? 1 : -1;
@@ -320,6 +382,7 @@
       if (newPlayers !== state.players) {
         state.players = newPlayers;
         state.shuttles = normalizeShuttles(state.shuttles, state.players);
+        state.names = normalizeNames(state.names, state.players);
         stateChanged(true);
       }
       return;
