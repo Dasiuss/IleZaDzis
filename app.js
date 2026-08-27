@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var VERSION = 'v5';
+  var VERSION = 'v6';
   var CALC = window.IleZaDzisCalculator;
   var PRICES = CALC.PRICES;
   var MULTI_DISCOUNT = CALC.MULTI_DISCOUNT;
